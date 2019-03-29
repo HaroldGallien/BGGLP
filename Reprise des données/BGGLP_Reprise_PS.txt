@@ -1,0 +1,144 @@
+use Medicament
+
+Alter procedure GestionDonneeesMedicaments
+as
+BEGIN
+	IF NOT EXISTS(SELECT * FROM sys.tables where name = 'Medicament')
+		print('la base de données médicament existe pas il faut executer le script SQL qui crée la base de données MEDICAMENT puis le script insertion')
+	else
+BEGIN
+	BEGIN
+		IF EXISTS(SELECT * FROM sys.tables where name = 'Avoir')
+			DROP TABLE Avoir
+	END
+    
+	BEGIN
+		IF EXISTS(SELECT * FROM sys.tables where name = 'Medicament_Beau')
+			DROP TABLE Medicament_Beau
+	END
+
+	BEGIN
+		IF EXISTS(SELECT * FROM sys.tables where name = 'Famille_Beau')
+			DROP TABLE Famille_Beau
+	END
+
+	BEGIN
+		IF EXISTS(SELECT * FROM sys.tables where name = 'Composition_Beau')
+			DROP TABLE Composition_Beau
+	END
+
+	 Create table Famille_Beau
+		(
+			id int identity(1,1),
+			FAM_LIBELLE varchar(100),
+			constraint PK_Famille_ID primary key (id)
+		)
+
+	Create table Composition_Beau
+		(
+			id int identity(1,1),
+			COM_LIBELLE varchar(100),
+			constraint PK_Composition_ID primary key (id)
+		)
+
+	Create table Medicament_Beau
+		(
+			id int identity(1,1),
+			MED_DEPOTLEGAL varchar(50),
+			MED_NOMCOMMERCIAL varchar(50),
+			MED_EFFETS varchar(255),
+			MED_CONTREINDICATION varchar(255),
+			MED_PRIXECHANTILLON REAL,
+			FAM_LIBELLE int,
+			constraint PK_Medicament_ID primary key (id),
+			constraint FK_Famille_Libelle foreign key (FAM_LIBELLE) references Famille_Beau (ID)
+		)
+
+	Create table Avoir
+		(
+			id_Medicament int,
+			id_Composition int,
+			Constraint PK_Avoir_ID primary key (id_Medicament, id_Composition),
+			Constraint FK_Medicament_ID foreign key (id_Medicament) references Medicament_Beau (id),
+			Constraint FK_Composition_ID foreign key (id_Composition) references Composition_Beau (id)
+		)
+
+	declare @MED_DEPOTLEGAL varchar(50)
+	declare @MED_NOMCOMMERCIAL varchar(50)
+	declare @FAM_CODE varchar(100)
+	declare @MED_COMPOSITION varchar(100)
+	declare @MED_EFFETS varchar(255)
+	declare @MED_CONTREINDIC varchar(255)
+	declare @MED_PRIXECHANTILLON real
+	declare @tamponFamille_Beau int
+	declare @tamponMedicament_Beau int
+	declare @tamponAvoirComposition int
+	declare @tamponAvoirMedicament int
+	declare @SqlCode int
+
+	set @tamponFamille_Beau = 0
+	set @tamponMedicament_Beau = 0
+
+		/*declartion curseur*/
+		declare C_Medicaments Cursor for select MED_DEPOTLEGAL from Medicament
+		Open C_Medicaments
+		Fetch NEXT FROM C_Medicaments INTO @MED_DEPOTLEGAL
+		while @@FETCH_STATUS = 0 
+			Begin	
+
+			/*Requete SQL*/
+				select @MED_DEPOTLEGAL = MED_DEPOTLEGAL from Medicament where MED_DEPOTLEGAL = @MED_DEPOTLEGAL
+				select @MED_NOMCOMMERCIAL = MED_NOMCOMMERCIAL from Medicament where MED_DEPOTLEGAL = @MED_DEPOTLEGAL
+				select @FAM_CODE = FAM_CODE from Medicament where MED_DEPOTLEGAL = @MED_DEPOTLEGAL
+				select @MED_COMPOSITION = MED_COMPOSITION from Medicament where MED_DEPOTLEGAL = @MED_DEPOTLEGAL
+				select @MED_EFFETS = MED_EFFETS from Medicament where MED_DEPOTLEGAL = @MED_DEPOTLEGAL
+				select @MED_CONTREINDIC = MED_CONTREINDIC from Medicament where MED_DEPOTLEGAL = @MED_DEPOTLEGAL
+				select @MED_PRIXECHANTILLON = MED_PRIXECHANTILLON from Medicament where MED_DEPOTLEGAL = @MED_DEPOTLEGAL
+			
+				/*Table Famille_Beau*/
+				/*Faire condition pour avoir 1 seul exemplaire*/
+				IF NOT EXISTS (Select * from Famille_Beau Where FAM_LIBELLE = @FAM_CODE)
+					BEGIN
+						set @tamponFamille_Beau = @tamponFamille_Beau + 1
+						insert into Famille_Beau (FAM_LIBELLE) VALUES (@FAM_CODE)
+					END
+
+
+				/*Table Composition_Beau*/
+				IF NOT EXISTS (Select * from Composition_Beau Where COM_LIBELLE = @MED_COMPOSITION)
+					BEGIN
+						insert into Composition_Beau (COM_LIBELLE) VALUES (@MED_COMPOSITION)
+					END
+			
+
+				/*Table Famille_Beau*/
+				select @tamponMedicament_Beau = id FROM Famille_Beau where FAM_LIBELLE = @FAM_CODE
+				insert into Medicament_Beau (MED_DEPOTLEGAL, MED_NOMCOMMERCIAL, MED_EFFETS, MED_CONTREINDICATION, MED_PRIXECHANTILLON, FAM_LIBELLE) VALUES (@MED_DEPOTLEGAL, @MED_NOMCOMMERCIAL, @MED_EFFETS, @MED_CONTREINDIC, @MED_PRIXECHANTILLON, @tamponMedicament_Beau)
+			
+				/*Table Avoir*/
+				select @tamponAvoirComposition = id from Composition_Beau where COM_LIBELLE = @MED_COMPOSITION
+				select @tamponAvoirMedicament = id from Medicament_Beau where MED_DEPOTLEGAL = @MED_DEPOTLEGAL
+				insert into Avoir (id_Medicament, id_Composition) VALUES (@tamponAvoirMedicament, @tamponAvoirComposition)	
+			
+				/*Ligne suivante*/
+				Fetch NEXT FROM C_Medicaments INTO @MED_DEPOTLEGAL
+			END
+		/*Fermeture du Cursor*/
+		close C_Medicaments
+		Deallocate C_Medicaments
+
+		/*Supprimer la table Medicament de base*/
+		drop table Medicament
+	END
+END
+
+
+
+	
+exec GestionDonneeesMedicaments
+
+select * from Medicament
+select * from Famille_Beau
+select * from Composition_Beau 
+select * from Medicament_Beau
+select * from Avoir 

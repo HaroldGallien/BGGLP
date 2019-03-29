@@ -1,0 +1,96 @@
+DROP DATABASE IF EXISTS MLR2;
+
+CREATE DATABASE IF NOT EXISTS MLR2;
+USE MLR2;
+# -----------------------------------------------------------------------------
+#       TABLE : MEDICAMENT
+# -----------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS MEDICAMENT
+ (
+   ID CHAR(9) NOT NULL  ,
+   ID_APPARTENIR INTEGER(2) NOT NULL  ,
+   MED_DEPOTLEGAL CHAR(32) NULL  ,
+   MED_NOMCOMMERCIAL CHAR(40) NULL  ,
+   MED_EFFETS VARCHAR(500) NULL  ,
+   MED_CONTREINDICATION VARCHAR(500) NULL  ,
+   MED_PRIXECHANTILLON REAL(5,2) NULL  
+   , PRIMARY KEY (ID) 
+ ) 
+ comment = "";
+
+# -----------------------------------------------------------------------------
+#       INDEX DE LA TABLE MEDICAMENT
+# -----------------------------------------------------------------------------
+
+
+CREATE  INDEX I_FK_MEDICAMENT_FAMILLE
+     ON MEDICAMENT (ID_APPARTENIR ASC);
+
+# -----------------------------------------------------------------------------
+#       TABLE : COMPOSITION
+# -----------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS COMPOSITION
+ (
+   ID INTEGER(2) NOT NULL AUTO_INCREMENT ,
+   COM_LIBELLE CHAR(32) NULL  
+   , PRIMARY KEY (ID) 
+ ) 
+ comment = "";
+
+# -----------------------------------------------------------------------------
+#       TABLE : FAMILLE
+# -----------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS FAMILLE
+ (
+   ID INTEGER(2) NOT NULL AUTO_INCREMENT ,
+   FAM_LIBELLE VARCHAR(100) NULL  
+   , PRIMARY KEY (ID) 
+ ) 
+ comment = "";
+
+# -----------------------------------------------------------------------------
+#       TABLE : AVOIR
+# -----------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS AVOIR
+ (
+   ID INTEGER(2) NOT NULL  ,
+   ID_1 CHAR(9) NOT NULL  
+   , PRIMARY KEY (ID,ID_1) 
+ ) 
+ comment = "";
+
+# -----------------------------------------------------------------------------
+#       INDEX DE LA TABLE AVOIR
+# -----------------------------------------------------------------------------
+
+
+CREATE  INDEX I_FK_AVOIR_COMPOSITION
+     ON AVOIR (ID ASC);
+
+CREATE  INDEX I_FK_AVOIR_MEDICAMENT
+     ON AVOIR (ID_1 ASC);
+
+
+# -----------------------------------------------------------------------------
+#       CREATION DES REFERENCES DE TABLE
+# -----------------------------------------------------------------------------
+
+
+ALTER TABLE MEDICAMENT 
+  ADD FOREIGN KEY FK_MEDICAMENT_FAMILLE (ID_APPARTENIR)
+      REFERENCES FAMILLE (ID) ;
+
+
+ALTER TABLE AVOIR 
+  ADD FOREIGN KEY FK_AVOIR_COMPOSITION (ID)
+      REFERENCES COMPOSITION (ID) ;
+
+
+ALTER TABLE AVOIR 
+  ADD FOREIGN KEY FK_AVOIR_MEDICAMENT (ID_1)
+      REFERENCES MEDICAMENT (ID) ;
+
